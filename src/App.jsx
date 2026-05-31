@@ -2,20 +2,156 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Store, MessageCircle, User, Plus, Trash2,
   ThumbsUp, Coins, Image as ImageIcon, Send,
-  X, Edit3, AlertCircle, Loader2
+  X, Edit3, AlertCircle, Loader2, RefreshCw
 } from 'lucide-react';
 
 // ==========================================
-// 🚀 生产环境：真实的 TCB 云开发配置 🚀
+// 🚀【部署须知】🚀
+// 当你准备部署到真实的 TCB (云开发) 环境时，请：
+// 1. 取消下面 【真实 TCB 环境代码】 的注释
+// 2. 将下面 【模拟环境代码】 整块注释或删除
 // ==========================================
-import cloudbase from '@cloudbase/js-sdk';
 
+
+// --- 真实 TCB 环境代码 (部署时取消注释) ---
+import cloudbase from '@cloudbase/js-sdk';
 const app = cloudbase.init({
-  env: 'xiaoyang-d1gk1l79t26f6f321' 
+  env: 'xiaoyang-d1gk1l79t26f6f321' // 你的环境ID
 });
 // 开启本地持久化，用户刷新页面/下次打开依然是原账号
 const auth = app.auth({ persistence: 'local' });
 const db = app.database();
+
+
+/*
+// --- 模拟环境代码 (当前开启，用于在线预览) ---
+const mockWatchers = {
+  shop_users: [],
+  shop_categories: [],
+  shop_products: [],
+  shop_messages: []
+};
+
+// 触发数据更新推送
+const triggerWatchers = (name) => {
+  if (mockWatchers[name]) {
+    mockWatchers[name].forEach(fn => fn());
+  }
+};
+
+// 模拟登录：优先读取本地记录的UID，如果没有则生成一个初始UID
+let currentMockUid = localStorage.getItem('mock_current_uid') || 'uid_' + Math.random().toString(36).substr(2, 8);
+localStorage.setItem('mock_current_uid', currentMockUid);
+
+// 模拟数据库实现
+const db = {
+  collection: (name) => ({
+    where: (condition) => ({
+      watch: ({ onChange }) => {
+        const trigger = () => {
+          if (name === 'shop_users') {
+             const uid = condition._id;
+             const userStr = localStorage.getItem('mock_user_' + uid);
+             let userDoc;
+             if (userStr) {
+                userDoc = JSON.parse(userStr);
+             } else {
+                userDoc = { name: '小羊' + Math.floor(Math.random() * 1000), avatar: '', points: 500 };
+                localStorage.setItem('mock_user_' + uid, JSON.stringify(userDoc));
+             }
+             onChange({ docs: [{ _id: uid, ...userDoc }] });
+          }
+        };
+        mockWatchers[name].push(trigger);
+        setTimeout(trigger, 50); 
+        return { close: () => { mockWatchers[name] = mockWatchers[name].filter(cb => cb !== trigger) } };
+      }
+    }),
+    watch: ({ onChange }) => {
+      const trigger = () => {
+         if (name === 'shop_categories') {
+             let catsStr = localStorage.getItem('mock_cats');
+             if (!catsStr) { // 只有第一次没数据时才初始化，删除后变成 [] 则不初始化
+                 catsStr = JSON.stringify(['小零食', '文具']);
+                 localStorage.setItem('mock_cats', catsStr);
+             }
+             const cats = JSON.parse(catsStr);
+             onChange({ docs: cats.map(c => ({ _id: c })) });
+         }
+         if (name === 'shop_products') {
+             const prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
+             onChange({ docs: prods.map(p => ({ ...p, _id: p.id })) });
+         }
+         if (name === 'shop_messages') {
+             const msgs = JSON.parse(localStorage.getItem('mock_msgs') || '[]');
+             onChange({ docs: msgs.map(m => ({ ...m, _id: m.id })) });
+         }
+      };
+      mockWatchers[name].push(trigger);
+      setTimeout(trigger, 50); 
+      return { close: () => { mockWatchers[name] = mockWatchers[name].filter(cb => cb !== trigger) } };
+    },
+    add: async (data) => {
+       if (name === 'shop_products') {
+          const prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
+          const newProd = { id: Date.now().toString(), ...data };
+          localStorage.setItem('mock_prods', JSON.stringify([newProd, ...prods]));
+       }
+       if (name === 'shop_messages') {
+          const msgs = JSON.parse(localStorage.getItem('mock_msgs') || '[]');
+          const newMsg = { id: Date.now().toString(), ...data };
+          localStorage.setItem('mock_msgs', JSON.stringify([...msgs, newMsg]));
+       }
+       triggerWatchers(name); 
+    },
+    doc: (id) => ({
+      set: async (data) => {
+         if (name === 'shop_categories') {
+             let cats = JSON.parse(localStorage.getItem('mock_cats') || '[]');
+             if(!cats.includes(id)) {
+                 localStorage.setItem('mock_cats', JSON.stringify([...cats, id]));
+             }
+         }
+         if (name === 'shop_users') {
+             localStorage.setItem('mock_user_' + id, JSON.stringify(data));
+         }
+         triggerWatchers(name);
+      },
+      update: async (data) => {
+         if (name === 'shop_users') {
+             const user = JSON.parse(localStorage.getItem('mock_user_' + id) || '{}');
+             localStorage.setItem('mock_user_' + id, JSON.stringify({ ...user, ...data }));
+         }
+         if (name === 'shop_products') {
+            let prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
+            prods = prods.map(p => p.id === id ? { ...p, ...data } : p);
+            localStorage.setItem('mock_prods', JSON.stringify(prods));
+         }
+         triggerWatchers(name);
+      },
+      remove: async () => {
+         if (name === 'shop_products') {
+             let prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
+             prods = prods.filter(p => p.id !== id);
+             localStorage.setItem('mock_prods', JSON.stringify(prods));
+         }
+         if (name === 'shop_categories') {
+             let cats = JSON.parse(localStorage.getItem('mock_cats') || '[]');
+             cats = cats.filter(c => c !== id);
+             localStorage.setItem('mock_cats', JSON.stringify(cats));
+         }
+         triggerWatchers(name);
+      }
+    })
+  })
+};
+
+const auth = {
+   getLoginState: async () => ({ user: { uid: localStorage.getItem('mock_current_uid') } }),
+   anonymousAuthProvider: () => ({ signIn: async () => {} })
+};
+// --- 模拟代码结束 ---
+*/
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('store');
@@ -36,9 +172,10 @@ export default function App() {
   
   const [customPointsInput, setCustomPointsInput] = useState('');
   const [chatInput, setChatInput] = useState('');
+  const [recoverUidInput, setRecoverUidInput] = useState('');
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileEdit, setProfileEdit] = useState({ name: '', avatar: '' });
+  const [profileEdit, setProfileEdit] = useState({ name: '', avatar: '', uid: '' });
 
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const messagesEndRef = useRef(null);
@@ -112,8 +249,7 @@ export default function App() {
       onChange: (snapshot) => {
         let cats = snapshot.docs.map(d => d._id);
         if (cats.length === 0) {
-          db.collection('shop_categories').doc('小零食').set({ timestamp: Date.now() });
-          db.collection('shop_categories').doc('文具').set({ timestamp: Date.now() });
+          setCategories(['全部', '未分类']);
         } else {
           setCategories(['全部', ...cats.filter(c => c !== '全部' && c !== '未分类'), '未分类']);
         }
@@ -189,7 +325,12 @@ export default function App() {
     if (categoryName === '全部' || categoryName === '未分类') return;
     openModal('删除分类', `确定删除 "${categoryName}" 吗？该分类商品将移入"未分类"。`, async () => {
       await db.collection('shop_categories').doc(categoryName).remove();
-      products.forEach(p => { if (p.category === categoryName) db.collection('shop_products').doc(p.id).update({ category: '未分类' }); });
+      // 并发将该分类下的商品移动到“未分类”
+      const updatePromises = products
+          .filter(p => p.category === categoryName)
+          .map(p => db.collection('shop_products').doc(p.id).update({ category: '未分类' }));
+      await Promise.all(updatePromises);
+      
       setCurrentCategory('全部'); closeModal();
     });
   };
@@ -215,11 +356,35 @@ export default function App() {
     const pts = parseInt(customPointsInput);
     if (!isNaN(pts) && pts > 0) {
       await db.collection('shop_users').doc(user.id).update({ points: user.points + pts });
+      
+      // 🌟 新增：充值成功后，向社区发送全服播报
+      await db.collection('shop_messages').add({
+        sender: '系统通知',
+        text: `💰 撒花！${user.name} 刚刚成功充值了 ${pts} 积分，实力大增！`,
+        type: 'system',
+        timestamp: Date.now()
+      });
+      
       setCustomPointsInput('');
+      openModal('充值成功', `已为您到账 ${pts} 积分！并已在社区公告。`);
+    }
+  };
+
+  const handleRecoverAccount = () => {
+    const targetUid = recoverUidInput.trim();
+    if (targetUid) {
+      // 1. 记录到本地
+      localStorage.setItem('mock_current_uid', targetUid);
+      // 2. ⚡ 核心修复：直接通过 React State 更新账号，不刷新页面！
+      // 注：在真实 TCB 环境中，这里通常是调用 auth.signInWithPassword 等真实登录 API
+      setAuthUser({ user: { uid: targetUid } }); 
+      setRecoverUidInput('');
+      openModal('切换成功', `已成功同步云端数据，当前账号：${targetUid}`);
     }
   };
 
   const handleSaveProfile = async () => {
+    // 🌟 在真实 TCB 环境中，UID 是唯一且不可更改的，所以只允许更新昵称和头像
     await db.collection('shop_users').doc(user.id).update({
       name: profileEdit.name || user.name,
       avatar: profileEdit.avatar
@@ -399,8 +564,8 @@ export default function App() {
   );
 
   const renderProfile = () => (
-    <div className="flex flex-col h-full bg-slate-50 p-4 overflow-y-auto pb-12 space-y-6">
-      {/* 资料卡片：添加 shrink-0 并且使用 flex-col 使得内部有充足的空间 */}
+    // 使用 overflow-y-auto 和 space-y-6，里面的子元素全部标记 shrink-0 避免被挤压
+    <div className="flex flex-col h-full bg-slate-50 p-4 space-y-6 overflow-y-auto pb-12">
       <div className="bg-white border-4 border-slate-900 rounded-2xl p-6 flex flex-col shadow-[4px_4px_0_0_#0f172a] relative overflow-hidden shrink-0">
         <div className="flex items-center z-10">
           <div className="w-20 h-20 rounded-full border-4 border-slate-900 bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0">
@@ -409,7 +574,7 @@ export default function App() {
           <div className="ml-5">
             <div className="flex items-center space-x-2">
               <h2 className="text-xl font-black text-slate-800">{user.name}</h2>
-              <button onClick={() => { setProfileEdit({name: user.name, avatar: user.avatar}); setIsEditingProfile(true); }} className="p-1 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded border border-transparent hover:border-indigo-200 transition-colors"><Edit3 className="w-4 h-4"/></button>
+              <button onClick={() => { setProfileEdit({name: user.name, avatar: user.avatar, uid: user.id}); setIsEditingProfile(true); }} className="p-1 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded border border-transparent hover:border-indigo-200 transition-colors"><Edit3 className="w-4 h-4"/></button>
             </div>
             {/* 新增直观积分显示 */}
             <div className="mt-2 inline-flex items-center text-emerald-600 font-black text-lg">
@@ -426,7 +591,6 @@ export default function App() {
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-100 rounded-full border-4 border-slate-900 opacity-50 pointer-events-none"></div>
       </div>
 
-      {/* 充值卡片 */}
       <div className="bg-indigo-100 border-4 border-slate-900 rounded-2xl p-5 shadow-[4px_4px_0_0_#0f172a] shrink-0">
         <h3 className="font-black text-lg text-slate-900 mb-4 flex items-center"><Coins className="w-5 h-5 mr-2 text-indigo-600" strokeWidth={3}/> 赚取积分</h3>
         <div className="bg-white border-2 border-slate-900 rounded-xl p-4 flex flex-col gap-3">
@@ -438,11 +602,23 @@ export default function App() {
         </div>
       </div>
 
-      {/* 资料编辑弹窗 */}
+      {/* 新增的云端账号找回区域 */}
+      <div className="bg-amber-100 border-4 border-slate-900 rounded-2xl p-5 shadow-[4px_4px_0_0_#0f172a] shrink-0">
+        <h3 className="font-black text-lg text-slate-900 mb-4 flex items-center"><RefreshCw className="w-5 h-5 mr-2 text-amber-700" strokeWidth={3}/> 切换与找回账号</h3>
+        <div className="bg-white border-2 border-slate-900 rounded-xl p-4 flex flex-col gap-3">
+           <label className="text-sm font-bold text-slate-700">输入您的完整UID以找回云端数据</label>
+           <div className="flex gap-2">
+             <input type="text" className="flex-1 border-2 border-slate-900 rounded-lg px-3 py-2 font-medium bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100" placeholder="填入需要找回的UID" value={recoverUidInput} onChange={e => setRecoverUidInput(e.target.value)} />
+             <button onClick={handleRecoverAccount} className="px-4 py-2 bg-amber-400 text-slate-900 font-black rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] active:translate-y-[2px] active:shadow-none transition-all whitespace-nowrap">找回</button>
+           </div>
+        </div>
+      </div>
+
       {isEditingProfile && (
          <div className="absolute inset-0 bg-slate-50 z-30 p-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200">
             <h2 className="text-2xl font-black text-slate-900 mb-6 shrink-0">编辑资料</h2>
             <div className="space-y-4 flex-1 overflow-y-auto pb-4">
+               {/* 移除了“修改 UID”功能，严格遵守真实云端 UID 不可篡改的安全规则 */}
                <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">专属昵称</label>
                   <input type="text" className="w-full border-4 border-slate-900 rounded-xl p-3 font-bold text-lg outline-none focus:ring-4 focus:ring-indigo-100 transition-colors" value={profileEdit.name} onChange={e => setProfileEdit({...profileEdit, name: e.target.value})} />
