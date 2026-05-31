@@ -6,141 +6,29 @@ import {
 } from 'lucide-react';
 
 // ==========================================
-// 🚨 在线预览环境降级方案 🚨
-// 由于在线沙盒无法安装 @cloudbase/js-sdk·
-// 这里使用模拟数据和 LocalStorage 以确保界面可以被渲染
-// 请在真实的本地开发环境中使用真正的 cloudbase SDK (如下面注释掉的部分)
+// 🚀 生产环境：真实的 TCB 云开发配置 🚀
 // ==========================================
-
-
-//=== 引入腾讯云开发 SDK ===
 import cloudbase from '@cloudbase/js-sdk';
 
-// === 初始化 TCB (使用您的真实环境ID) ===
 const app = cloudbase.init({
   env: 'xiaoyang-d1gk1l79t26f6f321' 
 });
+// 开启本地持久化，用户刷新页面/下次打开依然是原账号
 const auth = app.auth({ persistence: 'local' });
 const db = app.database();
 
-
-// // 模拟的 TCB 数据库对象
-// const db = {
-//   collection: (name) => ({
-//     where: () => ({
-//       watch: ({ onChange }) => {
-//         // 模拟首次返回用户数据
-//         setTimeout(() => {
-//           const userStr = localStorage.getItem('mock_user');
-//           let userDoc;
-//           if (userStr) {
-//              userDoc = JSON.parse(userStr);
-//           } else {
-//              userDoc = { name: '小羊' + Math.floor(Math.random() * 1000), avatar: '', points: 500 };
-//              localStorage.setItem('mock_user', JSON.stringify(userDoc));
-//           }
-//           onChange({ docs: [{ _id: 'mock_uid_123', ...userDoc }] });
-//         }, 500);
-//         return { close: () => {} };
-//       }
-//     }),
-//     watch: ({ onChange }) => {
-//       // 模拟首次返回数据
-//        setTimeout(() => {
-//           if (name === 'shop_categories') {
-//              const cats = JSON.parse(localStorage.getItem('mock_cats') || '[]');
-//              if (cats.length === 0) {
-//                  localStorage.setItem('mock_cats', JSON.stringify(['小零食', '文具']));
-//                  onChange({ docs: [{ _id: '小零食' }, { _id: '文具' }] });
-//              } else {
-//                  onChange({ docs: cats.map(c => ({ _id: c })) });
-//              }
-//           }
-//           if (name === 'shop_products') {
-//               const prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
-//               onChange({ docs: prods.map(p => ({ ...p, _id: p.id })) });
-//           }
-//           if (name === 'shop_messages') {
-//              const msgs = JSON.parse(localStorage.getItem('mock_msgs') || '[]');
-//              onChange({ docs: msgs.map(m => ({ ...m, _id: m.id })) });
-//           }
-//        }, 600);
-//       return { close: () => {} };
-//     },
-//     add: async (data) => {
-//        if (name === 'shop_products') {
-//           const prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
-//           const newProd = { id: Date.now().toString(), ...data };
-//           localStorage.setItem('mock_prods', JSON.stringify([newProd, ...prods]));
-//        }
-//        if (name === 'shop_messages') {
-//           const msgs = JSON.parse(localStorage.getItem('mock_msgs') || '[]');
-//           const newMsg = { id: Date.now().toString(), ...data };
-//           localStorage.setItem('mock_msgs', JSON.stringify([...msgs, newMsg]));
-//        }
-//        // 触发页面刷新 (模拟实时)
-//        window.location.reload(); 
-//     },
-//     doc: (id) => ({
-//       set: async (data) => {
-//          if (name === 'shop_categories') {
-//              const cats = JSON.parse(localStorage.getItem('mock_cats') || '["小零食", "文具"]');
-//              if(!cats.includes(id)) {
-//                  localStorage.setItem('mock_cats', JSON.stringify([...cats, id]));
-//                  window.location.reload(); 
-//              }
-//          }
-//       },
-//       update: async (data) => {
-//          if (name === 'shop_users') {
-//              const user = JSON.parse(localStorage.getItem('mock_user') || '{}');
-//              localStorage.setItem('mock_user', JSON.stringify({ ...user, ...data }));
-//              window.location.reload(); 
-//          }
-//          if (name === 'shop_products') {
-//             let prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
-//             prods = prods.map(p => p.id === id ? { ...p, ...data } : p);
-//             localStorage.setItem('mock_prods', JSON.stringify(prods));
-//             window.location.reload();
-//          }
-//       },
-//       remove: async () => {
-//          if (name === 'shop_products') {
-//              let prods = JSON.parse(localStorage.getItem('mock_prods') || '[]');
-//              prods = prods.filter(p => p.id !== id);
-//              localStorage.setItem('mock_prods', JSON.stringify(prods));
-//              window.location.reload(); 
-//          }
-//          if (name === 'shop_categories') {
-//              let cats = JSON.parse(localStorage.getItem('mock_cats') || '[]');
-//              cats = cats.filter(c => c !== id);
-//              localStorage.setItem('mock_cats', JSON.stringify(cats));
-//              window.location.reload(); 
-//          }
-//       }
-//     })
-//   })
-// };
-
-// const auth = {
-//    getLoginState: async () => ({ user: { uid: 'mock_uid_123' } }),
-//    anonymousAuthProvider: () => ({ signIn: async () => {} })
-// };
-
-
 export default function App() {
-  // === 导航状态 ===
   const [activeTab, setActiveTab] = useState('store');
   
-  // === 核心数据状态 ===
-  const [authUser, setAuthUser] = useState(null); // TCB 登录状态
-  const [user, setUser] = useState(null);         // 数据库个人档案
-  const [products, setProducts] = useState([]);   // 商品列表
-  const [categories, setCategories] = useState(['全部', '未分类']); // 分类列表
-  const [messages, setMessages] = useState([]);   // 社区消息
+  // 核心数据状态
+  const [authUser, setAuthUser] = useState(null); 
+  const [user, setUser] = useState(null);         
+  const [products, setProducts] = useState([]);   
+  const [categories, setCategories] = useState(['全部', '未分类']); 
+  const [messages, setMessages] = useState([]);   
   const [currentCategory, setCurrentCategory] = useState('全部');
 
-  // === 页面交互状态 ===
+  // 页面交互状态
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [editProductId, setEditProductId] = useState(null);
   const [newProduct, setNewProduct] = useState({ name: '', category: '未分类', cost: '', imageUrl: '' });
@@ -148,26 +36,44 @@ export default function App() {
   
   const [customPointsInput, setCustomPointsInput] = useState('');
   const [chatInput, setChatInput] = useState('');
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileEdit, setProfileEdit] = useState({ name: '', avatar: '' });
 
-  // === 弹窗状态 ===
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
-
   const messagesEndRef = useRef(null);
 
-  // === 工具函数：格式化时间 ===
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const d = new Date(timestamp);
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    const day = d.getDate().toString().padStart(2, '0');
-    const hours = d.getHours().toString().padStart(2, '0');
-    const minutes = d.getMinutes().toString().padStart(2, '0');
-    return `${month}-${day} ${hours}:${minutes}`;
+    return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  // === 第一步：TCB 匿名登录 ===
+  const openModal = (title, message, onConfirm = null) => { setModal({ isOpen: true, title, message, onConfirm }); };
+  const closeModal = () => setModal({ isOpen: false, title: '', message: '', onConfirm: null });
+
+  const handleImageUpload = (e, callback) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { openModal('提示', '只能上传图片哦！'); return; }
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width; let height = img.height;
+        if (width > height) { if (width > 400) { height *= 400 / width; width = 400; } } 
+        else { if (height > 400) { width *= 400 / height; height = 400; } }
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        callback(canvas.toDataURL('image/jpeg', 0.6));
+      };
+    };
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -185,28 +91,23 @@ export default function App() {
     initAuth();
   }, []);
 
-  // === 第二步：监听 TCB 云端实时数据 ===
   useEffect(() => {
     if (!authUser || !authUser.user || !authUser.user.uid) return;
     const uid = authUser.user.uid;
-
     let profileWatcher, catWatcher, prodWatcher, msgWatcher;
 
-    // 1. 监听当前用户档案
     profileWatcher = db.collection('shop_users').where({ _id: uid }).watch({
       onChange: (snapshot) => {
         if (snapshot.docs.length > 0) {
           setUser({ id: uid, ...snapshot.docs[0] });
         } else {
-          // 新用户初始化
           const defaultUser = { name: '小羊' + Math.floor(Math.random() * 1000), avatar: '', points: 500 };
           db.collection('shop_users').doc(uid).set(defaultUser);
         }
       },
-      onError: (err) => console.error("用户信息读取失败", err)
+      onError: (err) => console.error(err)
     });
 
-    // 2. 监听分类
     catWatcher = db.collection('shop_categories').watch({
       onChange: (snapshot) => {
         let cats = snapshot.docs.map(d => d._id);
@@ -220,21 +121,19 @@ export default function App() {
       onError: (err) => console.error(err)
     });
 
-    // 3. 监听商品 (自带实时同步)
     prodWatcher = db.collection('shop_products').watch({
       onChange: (snapshot) => {
         const items = snapshot.docs.map(d => ({ id: d._id, ...d }));
-        items.sort((a, b) => b.timestamp - a.timestamp); // 倒序
+        items.sort((a, b) => b.timestamp - a.timestamp);
         setProducts(items);
       },
       onError: (err) => console.error(err)
     });
 
-    // 4. 监听社区消息
     msgWatcher = db.collection('shop_messages').watch({
       onChange: (snapshot) => {
         const msgs = snapshot.docs.map(d => ({ id: d._id, ...d }));
-        msgs.sort((a, b) => a.timestamp - b.timestamp); // 正序，旧消息在上面
+        msgs.sort((a, b) => a.timestamp - b.timestamp);
         setMessages(msgs);
       },
       onError: (err) => console.error(err)
@@ -248,46 +147,12 @@ export default function App() {
     };
   }, [authUser]);
 
-  // === 自动滚动聊天到底部 ===
   useEffect(() => {
     if (activeTab === 'community') {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   }, [messages, activeTab]);
 
-  const openModal = (title, message, onConfirm = null) => { setModal({ isOpen: true, title, message, onConfirm }); };
-  const closeModal = () => setModal({ isOpen: false, title: '', message: '', onConfirm: null });
-
-  // === 前端图片压缩 ===
-  const handleImageUpload = (e, callback) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      openModal('提示', '只能上传图片哦！');
-      return;
-    }
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 400; const MAX_HEIGHT = 400;
-        let width = img.width; let height = img.height;
-        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-        canvas.width = width; canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL('image/jpeg', 0.6));
-      };
-    };
-  };
-
-  // === TCB 操作区 ===
   const handleAddNewCategory = async () => {
     const catName = newCategoryInput.trim();
     if (catName && !categories.includes(catName)) {
@@ -297,53 +162,26 @@ export default function App() {
     }
   };
 
-  const openAddProduct = () => {
-    setEditProductId(null);
-    setNewProduct({ name: '', category: '未分类', cost: '', imageUrl: '' });
-    setIsAddingProduct(true);
-  };
+  const openAddProduct = () => { setEditProductId(null); setNewProduct({ name: '', category: '未分类', cost: '', imageUrl: '' }); setIsAddingProduct(true); };
+  const closeProductForm = () => { setIsAddingProduct(false); setEditProductId(null); setNewProduct({ name: '', category: '未分类', cost: '', imageUrl: '' }); };
 
   const handleEditProduct = (product) => {
     setEditProductId(product.id);
-    setNewProduct({
-      name: product.name,
-      category: product.category,
-      cost: product.cost.toString(),
-      imageUrl: product.imageUrl || ''
-    });
+    setNewProduct({ name: product.name, category: product.category, cost: product.cost.toString(), imageUrl: product.imageUrl || '' });
     setIsAddingProduct(true);
   };
 
-  const closeProductForm = () => {
-    setIsAddingProduct(false);
-    setEditProductId(null);
-    setNewProduct({ name: '', category: '未分类', cost: '', imageUrl: '' });
-  };
-
   const submitProduct = async () => {
-    if (!newProduct.name.trim() || !newProduct.cost) {
-      openModal('提示', '名称和积分不能为空哦！');
-      return;
-    }
-    const productData = {
-      name: newProduct.name,
-      cost: parseInt(newProduct.cost) || 0,
-      category: newProduct.category,
-      imageUrl: newProduct.imageUrl
-    };
-
-    if (editProductId) {
-      await db.collection('shop_products').doc(editProductId).update(productData);
-    } else {
-      await db.collection('shop_products').add({ ...productData, timestamp: Date.now() });
-    }
+    if (!newProduct.name.trim() || !newProduct.cost) { openModal('提示', '名称和积分不能为空哦！'); return; }
+    const productData = { name: newProduct.name, cost: parseInt(newProduct.cost) || 0, category: newProduct.category, imageUrl: newProduct.imageUrl };
+    if (editProductId) { await db.collection('shop_products').doc(editProductId).update(productData); } 
+    else { await db.collection('shop_products').add({ ...productData, timestamp: Date.now() }); }
     closeProductForm();
   };
 
   const confirmDeleteProduct = (id) => {
     openModal('下架商品', '确定要删除这款商品吗？所有人都会看不见它哦。', async () => {
-      await db.collection('shop_products').doc(id).remove();
-      closeModal();
+      await db.collection('shop_products').doc(id).remove(); closeModal();
     });
   };
 
@@ -351,40 +189,24 @@ export default function App() {
     if (categoryName === '全部' || categoryName === '未分类') return;
     openModal('删除分类', `确定删除 "${categoryName}" 吗？该分类商品将移入"未分类"。`, async () => {
       await db.collection('shop_categories').doc(categoryName).remove();
-      products.forEach(p => {
-        if (p.category === categoryName) {
-          db.collection('shop_products').doc(p.id).update({ category: '未分类' });
-        }
-      });
-      setCurrentCategory('全部');
-      closeModal();
+      products.forEach(p => { if (p.category === categoryName) db.collection('shop_products').doc(p.id).update({ category: '未分类' }); });
+      setCurrentCategory('全部'); closeModal();
     });
   };
 
   const handleRedeem = (product) => {
-    if (user.points < product.cost) {
-      openModal('积分不足', '您当前的积分不够兑换这款商品哦！');
-      return;
-    }
+    if (user.points < product.cost) { openModal('积分不足', '您当前的积分不够兑换这款商品哦！'); return; }
     openModal('确认兑换', `花费 ${product.cost} 积分兑换【${product.name}】？`, async () => {
       await db.collection('shop_users').doc(user.id).update({ points: user.points - product.cost });
-      await db.collection('shop_messages').add({
-        sender: '系统通知',
-        text: `🎉 恭喜 ${user.name} 刚刚兑换了【${product.name}】！`,
-        type: 'system',
-        timestamp: Date.now()
-      });
+      await db.collection('shop_messages').add({ sender: '系统通知', text: `🎉 恭喜 ${user.name} 刚刚兑换了【${product.name}】！`, type: 'system', timestamp: Date.now() });
       closeModal();
     });
   };
 
   const handleRecommend = async (product) => {
     await db.collection('shop_messages').add({
-      sender: user.name,
-      text: `给大家强烈安利：【${product.name}】！只需 ${product.cost} 积分，快来看看！`,
-      type: 'recommend',
-      product: product,
-      timestamp: Date.now()
+      sender: user.name, text: `给大家强烈安利：【${product.name}】！只需 ${product.cost} 积分，快来看看！`,
+      type: 'recommend', product: product, timestamp: Date.now()
     });
     setActiveTab('community');
   };
@@ -408,16 +230,10 @@ export default function App() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
-    await db.collection('shop_messages').add({
-      sender: user.name,
-      text: chatInput,
-      type: 'chat',
-      timestamp: Date.now()
-    });
+    await db.collection('shop_messages').add({ sender: user.name, text: chatInput, type: 'chat', timestamp: Date.now() });
     setChatInput('');
   };
 
-  // === 页面拦截加载 ===
   if (!user) {
     return (
       <div className="h-screen w-full flex flex-col justify-center items-center bg-slate-100 text-slate-800 font-black">
@@ -427,27 +243,21 @@ export default function App() {
     );
   }
 
-  // === 渲染函数：商城 ===
   const renderStore = () => (
     <div className="flex flex-col h-full relative">
       <div className="bg-white px-4 py-3 border-b-4 border-slate-900 shadow-sm flex flex-col space-y-3 z-10 shrink-0">
         <div className="flex justify-between items-center">
           <h2 className="font-black text-lg text-slate-800">商品分类</h2>
-          <button 
-            onClick={openAddProduct} 
-            className="flex items-center text-sm font-bold bg-slate-900 text-white px-3 py-1.5 rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] active:translate-y-[2px] active:shadow-none transition-all"
-          >
+          <button onClick={openAddProduct} className="flex items-center text-sm font-bold bg-slate-900 text-white px-3 py-1.5 rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] active:translate-y-[2px] active:shadow-none transition-all">
             <Plus className="w-4 h-4 mr-1"/> 上架商品
           </button>
         </div>
         <div className="flex space-x-2 overflow-x-auto pb-2 pt-1 no-scrollbar items-center">
            {categories.map(cat => (
               <div key={cat} className="relative group shrink-0">
-                <button onClick={() => setCurrentCategory(cat)} className={`px-4 py-1.5 rounded-full font-bold text-sm border-2 transition-all whitespace-nowrap ${currentCategory === cat ? 'bg-emerald-400 text-slate-900 border-slate-900 shadow-[2px_2px_0_0_#0f172a]' : 'bg-white text-slate-600 border-slate-300 hover:border-slate-900 hover:text-slate-900 hover:shadow-[2px_2px_0_0_#0f172a]'}`}>
-                  {cat}
-                </button>
+                <button onClick={() => setCurrentCategory(cat)} className={`px-4 py-1.5 rounded-full font-bold text-sm border-2 transition-all whitespace-nowrap ${currentCategory === cat ? 'bg-emerald-400 text-slate-900 border-slate-900 shadow-[2px_2px_0_0_#0f172a]' : 'bg-white text-slate-600 border-slate-300 hover:border-slate-900 hover:text-slate-900 hover:shadow-[2px_2px_0_0_#0f172a]'}`}>{cat}</button>
                 {currentCategory === cat && !['全部', '未分类'].includes(cat) && (
-                  <button onClick={(e) => { e.stopPropagation(); confirmDeleteCategory(cat); }} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 border-2 border-slate-900 z-10 hover:scale-110 transition-transform" title="删除该分类"><X className="w-3 h-3" /></button>
+                  <button onClick={(e) => { e.stopPropagation(); confirmDeleteCategory(cat); }} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 border-2 border-slate-900 z-10 hover:scale-110 transition-transform"><X className="w-3 h-3" /></button>
                 )}
               </div>
            ))}
@@ -464,23 +274,20 @@ export default function App() {
           <div className="grid grid-cols-2 gap-4 pb-12 items-start">
             {products.filter(p => currentCategory === '全部' || p.category === currentCategory).map(product => (
               <div key={product.id} className="bg-white border-4 border-slate-900 rounded-xl overflow-hidden shadow-[4px_4px_0_0_#0f172a] hover:-translate-y-1 hover:translate-x-[1px] hover:shadow-[6px_6px_0_0_#0f172a] transition-all flex flex-col group relative">
-                
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all z-10">
-                  <button onClick={() => handleEditProduct(product)} className="p-1.5 bg-blue-100 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-colors" title="修改商品"><Edit3 className="w-4 h-4" /></button>
-                  <button onClick={() => confirmDeleteProduct(product.id)} className="p-1.5 bg-red-100 hover:bg-red-500 text-red-600 hover:text-white rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-colors" title="下架商品"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={() => handleEditProduct(product)} className="p-1.5 bg-blue-100 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-colors"><Edit3 className="w-4 h-4" /></button>
+                  <button onClick={() => confirmDeleteProduct(product.id)} className="p-1.5 bg-red-100 hover:bg-red-500 text-red-600 hover:text-white rounded-lg border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a] transition-colors"><Trash2 className="w-4 h-4" /></button>
                 </div>
-
                 <div className="w-full aspect-square border-b-4 border-slate-900 bg-slate-100 relative overflow-hidden shrink-0">
                   {product.imageUrl ? <img src={product.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><ImageIcon className="w-8 h-8" /></div>}
                   <span className="absolute top-2 left-2 px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs font-black rounded border-2 border-slate-900 shadow-[2px_2px_0_0_#0f172a]">{product.category}</span>
                 </div>
-
                 <div className="p-3 flex flex-col flex-1 bg-white min-h-[110px]">
                   <h3 className="font-black text-slate-800 text-[15px] leading-snug break-words whitespace-normal mb-3">{product.name}</h3>
                   <div className="mt-auto pt-1 flex items-center justify-between gap-1 flex-wrap">
                     <div className="flex items-center text-indigo-600"><Coins className="w-4 h-4 mr-0.5" strokeWidth={3} /><span className="font-black text-lg leading-none">{product.cost}</span></div>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => handleRecommend(product)} className="p-1.5 bg-indigo-50 text-indigo-600 border-2 border-slate-900 rounded-lg shadow-[2px_2px_0_0_#0f172a] hover:bg-indigo-200 active:translate-y-[2px] active:shadow-none transition-all" title="推荐"><ThumbsUp className="w-4 h-4" strokeWidth={2.5} /></button>
+                      <button onClick={() => handleRecommend(product)} className="p-1.5 bg-indigo-50 text-indigo-600 border-2 border-slate-900 rounded-lg shadow-[2px_2px_0_0_#0f172a] hover:bg-indigo-200 active:translate-y-[2px] active:shadow-none transition-all"><ThumbsUp className="w-4 h-4" strokeWidth={2.5} /></button>
                       <button onClick={() => handleRedeem(product)} className="px-2.5 py-1.5 bg-slate-900 text-white font-black text-sm border-2 border-slate-900 rounded-lg shadow-[2px_2px_0_0_#0f172a] hover:bg-slate-800 active:translate-y-[2px] active:shadow-none transition-all whitespace-nowrap">兑换</button>
                     </div>
                   </div>
@@ -536,7 +343,6 @@ export default function App() {
     </div>
   );
 
-  // === 渲染函数：社区 ===
   const renderCommunity = () => (
     <div className="flex flex-col h-full bg-slate-50 relative">
       <div className="bg-white px-4 py-3 border-b-4 border-slate-900 flex justify-between items-center shadow-sm z-10 shrink-0">
@@ -592,27 +398,36 @@ export default function App() {
     </div>
   );
 
-  // === 渲染函数：我的 ===
   const renderProfile = () => (
-    <div className="flex flex-col h-full bg-slate-50 p-4 space-y-6 overflow-y-auto">
-      <div className="bg-white border-4 border-slate-900 rounded-2xl p-6 flex items-center shadow-[4px_4px_0_0_#0f172a] relative overflow-hidden">
-        <div className="w-20 h-20 rounded-full border-4 border-slate-900 bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0 z-10">
-          {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-emerald-600" strokeWidth={2.5} />}
-        </div>
-        <div className="ml-5 z-10">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-black text-slate-800">{user.name}</h2>
-            <button onClick={() => { setProfileEdit({name: user.name, avatar: user.avatar}); setIsEditingProfile(true); }} className="p-1 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded border border-transparent hover:border-indigo-200 transition-colors"><Edit3 className="w-4 h-4"/></button>
+    <div className="flex flex-col h-full bg-slate-50 p-4 overflow-y-auto pb-12 space-y-6">
+      {/* 资料卡片：添加 shrink-0 并且使用 flex-col 使得内部有充足的空间 */}
+      <div className="bg-white border-4 border-slate-900 rounded-2xl p-6 flex flex-col shadow-[4px_4px_0_0_#0f172a] relative overflow-hidden shrink-0">
+        <div className="flex items-center z-10">
+          <div className="w-20 h-20 rounded-full border-4 border-slate-900 bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0">
+            {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-emerald-600" strokeWidth={2.5} />}
           </div>
-          <div className="mt-2 inline-flex items-center bg-slate-100 border-2 border-slate-900 px-3 py-1 rounded-full text-sm">
-             <span className="font-bold text-slate-600 mr-2">云端UID:</span>
-             <span className="font-mono font-bold text-slate-800">{user.id.substring(0, 6)}...</span>
+          <div className="ml-5">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-xl font-black text-slate-800">{user.name}</h2>
+              <button onClick={() => { setProfileEdit({name: user.name, avatar: user.avatar}); setIsEditingProfile(true); }} className="p-1 text-slate-400 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded border border-transparent hover:border-indigo-200 transition-colors"><Edit3 className="w-4 h-4"/></button>
+            </div>
+            {/* 新增直观积分显示 */}
+            <div className="mt-2 inline-flex items-center text-emerald-600 font-black text-lg">
+                <Coins className="w-5 h-5 mr-1" strokeWidth={3} /> {user.points} 积分
+            </div>
           </div>
         </div>
-        <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-100 rounded-full border-4 border-slate-900 opacity-50"></div>
+        
+        {/* UID 显示，支持点按全选 */}
+        <div className="mt-5 p-3 bg-slate-100 border-2 border-slate-900 rounded-xl text-sm break-all select-all flex flex-col z-10 cursor-text">
+            <span className="font-bold text-slate-600 mb-1">云端数据标识 (UID) :</span>
+            <span className="font-mono font-bold text-slate-800">{user.id}</span>
+        </div>
+        <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-100 rounded-full border-4 border-slate-900 opacity-50 pointer-events-none"></div>
       </div>
 
-      <div className="bg-indigo-100 border-4 border-slate-900 rounded-2xl p-5 shadow-[4px_4px_0_0_#0f172a]">
+      {/* 充值卡片 */}
+      <div className="bg-indigo-100 border-4 border-slate-900 rounded-2xl p-5 shadow-[4px_4px_0_0_#0f172a] shrink-0">
         <h3 className="font-black text-lg text-slate-900 mb-4 flex items-center"><Coins className="w-5 h-5 mr-2 text-indigo-600" strokeWidth={3}/> 赚取积分</h3>
         <div className="bg-white border-2 border-slate-900 rounded-xl p-4 flex flex-col gap-3">
            <label className="text-sm font-bold text-slate-700">充值个人专属积分</label>
@@ -623,13 +438,14 @@ export default function App() {
         </div>
       </div>
 
+      {/* 资料编辑弹窗 */}
       {isEditingProfile && (
          <div className="absolute inset-0 bg-slate-50 z-30 p-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200">
-            <h2 className="text-2xl font-black text-slate-900 mb-6">编辑资料 (全网可见)</h2>
-            <div className="space-y-4">
+            <h2 className="text-2xl font-black text-slate-900 mb-6 shrink-0">编辑资料</h2>
+            <div className="space-y-4 flex-1 overflow-y-auto pb-4">
                <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">专属昵称</label>
-                  <input type="text" className="w-full border-4 border-slate-900 rounded-xl p-3 font-bold text-lg outline-none focus:ring-4 focus:ring-indigo-100" value={profileEdit.name} onChange={e => setProfileEdit({...profileEdit, name: e.target.value})} />
+                  <input type="text" className="w-full border-4 border-slate-900 rounded-xl p-3 font-bold text-lg outline-none focus:ring-4 focus:ring-indigo-100 transition-colors" value={profileEdit.name} onChange={e => setProfileEdit({...profileEdit, name: e.target.value})} />
                </div>
                <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">专属头像 (本地上传)</label>
@@ -641,7 +457,7 @@ export default function App() {
                   </div>
                </div>
             </div>
-            <div className="mt-auto flex gap-3 pt-6">
+            <div className="mt-auto flex gap-3 pt-4 shrink-0 border-t-2 border-slate-200">
                <button onClick={() => setIsEditingProfile(false)} className="flex-1 py-3 bg-white font-black text-slate-700 border-4 border-slate-900 rounded-xl shadow-[4px_4px_0_0_#0f172a] active:translate-y-[4px] active:shadow-none transition-all">取消</button>
                <button onClick={handleSaveProfile} className="flex-1 py-3 bg-slate-900 font-black text-white border-4 border-slate-900 rounded-xl shadow-[4px_4px_0_0_#0f172a] active:translate-y-[4px] active:shadow-none transition-all">保存</button>
             </div>
